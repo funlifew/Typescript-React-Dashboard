@@ -1,13 +1,31 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  body {
+    @apply bg-white dark:bg-dark-background text-gray-900 dark:text-white transition-colors duration-300;
+  }
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md transition-all duration-300 transform hover:-translate-y-1;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 dark:bg-dark-primary text-white hover:bg-blue-700 dark:hover:bg-purple-500;
+  }
+  
+  .card {
+    @apply bg-white dark:bg-dark-surface rounded-lg shadow-md p-6 transition-all duration-300;
+  }
+  
+  .nav-link {
+    @apply text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-dark-secondary transition-colors duration-300;
+  }
+
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
 }
