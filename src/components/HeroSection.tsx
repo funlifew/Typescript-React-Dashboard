@@ -14,13 +14,13 @@ const HeroSection: React.FC = () => {
           <div className="md:w-1/2 mb-10 md:mb-0">
             <AnimatedElement animation={{ type: 'fade-in' }}>
               <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-                Fuck React.js <span className="text-blue-600 dark:text-dark-primary">Typescript included</span>
+                React.js Dashboard <span className="text-blue-600 dark:text-dark-primary">Made by Mehdi Radfar</span>
               </h1>
             </AnimatedElement>
             
             <AnimatedElement animation={{ type: 'slide-up', delay: 200 }}>
               <p className="text-lg mb-6 text-gray-700 dark:text-gray-300">
-                fuckkkkkkkkkkkkkkkkkkkkkkkkkk react
+                this is a test dashboard for learning react and typescript
               </p>
             </AnimatedElement>
             
