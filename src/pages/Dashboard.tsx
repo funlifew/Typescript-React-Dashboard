@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AnimatedElement from '../components/AnimatedElement';
 import { useAuth } from '../contexts/AuthContext';
+import { useSearch } from '../contexts/SearchContext';
 
 /**
  * Dashboard statistics type
@@ -32,9 +33,10 @@ interface QuickLink {
  */
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { globalSearchQuery } = useSearch();
   
   // Sample dashboard statistics
-  const stats: DashboardStat[] = [
+  const initialStats: DashboardStat[] = [
     {
       id: 1,
       title: 'Total Users',
@@ -86,7 +88,7 @@ const Dashboard: React.FC = () => {
   ];
   
   // Quick links to dashboard features
-  const quickLinks: QuickLink[] = [
+  const initialQuickLinks: QuickLink[] = [
     {
       id: 1,
       title: 'Forms',
@@ -121,6 +123,40 @@ const Dashboard: React.FC = () => {
       ),
     },
   ];
+  
+  // State for filtered data
+  const [stats, setStats] = useState<DashboardStat[]>(initialStats);
+  const [quickLinks, setQuickLinks] = useState<QuickLink[]>(initialQuickLinks);
+  const [showNoResultsMessage, setShowNoResultsMessage] = useState(false);
+  
+  // Apply global search to dashboard items
+  useEffect(() => {
+    if (globalSearchQuery) {
+      const query = globalSearchQuery.toLowerCase();
+      
+      // Filter quick links
+      const filteredLinks = initialQuickLinks.filter(link => 
+        link.title.toLowerCase().includes(query) ||
+        link.description.toLowerCase().includes(query)
+      );
+      
+      // Filter stats
+      const filteredStats = initialStats.filter(stat => 
+        stat.title.toLowerCase().includes(query)
+      );
+      
+      setQuickLinks(filteredLinks);
+      setStats(filteredStats);
+      
+      // Show no results message if everything is filtered out
+      setShowNoResultsMessage(filteredLinks.length === 0 && filteredStats.length === 0);
+    } else {
+      // Reset to original data if global search is cleared
+      setQuickLinks(initialQuickLinks);
+      setStats(initialStats);
+      setShowNoResultsMessage(false);
+    }
+  }, [globalSearchQuery]);
 
   return (
     <div>
@@ -136,89 +172,120 @@ const Dashboard: React.FC = () => {
         </div>
       </AnimatedElement>
       
+      {/* No results message */}
+      {showNoResultsMessage && (
+        <AnimatedElement animation={{ type: 'fade-in' }}>
+          <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-6 mb-8">
+            <div className="text-center py-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No results found
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                We couldn't find any dashboard items that match your search query.
+              </p>
+              <Link 
+                to="/dashboard/tables"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 dark:bg-dark-primary hover:bg-blue-700 dark:hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-dark-primary"
+              >
+                Browse tables data
+              </Link>
+            </div>
+          </div>
+        </AnimatedElement>
+      )}
+      
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <AnimatedElement
-            key={stat.id}
-            animation={{ type: 'scale-in', delay: index * 100 }}
-          >
-            <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 text-blue-600 dark:text-dark-primary">
-                  {stat.icon}
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                      {stat.title}
-                    </dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900 dark:text-white">
-                        {stat.value}
-                      </div>
-                      <div className={`text-xs font-medium flex items-center ${
-                        stat.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        <svg
-                          className={`w-4 h-4 mr-1 ${stat.isPositive ? 'transform rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                        {stat.change} since last month
-                      </div>
-                    </dd>
-                  </dl>
+      {stats.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => (
+            <AnimatedElement
+              key={stat.id}
+              animation={{ type: 'scale-in', delay: index * 100 }}
+            >
+              <div className="bg-white dark:bg-dark-surface rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 text-blue-600 dark:text-dark-primary">
+                    {stat.icon}
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                        {stat.title}
+                      </dt>
+                      <dd>
+                        <div className="text-lg font-medium text-gray-900 dark:text-white">
+                          {stat.value}
+                        </div>
+                        <div className={`text-xs font-medium flex items-center ${
+                          stat.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          <svg
+                            className={`w-4 h-4 mr-1 ${stat.isPositive ? 'transform rotate-180' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                          {stat.change} since last month
+                        </div>
+                      </dd>
+                    </dl>
+                  </div>
                 </div>
               </div>
-            </div>
-          </AnimatedElement>
-        ))}
-      </div>
+            </AnimatedElement>
+          ))}
+        </div>
+      )}
       
       {/* Quick links section */}
-      <AnimatedElement animation={{ type: 'fade-in', delay: 200 }}>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Quick Access
-        </h2>
-      </AnimatedElement>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {quickLinks.map((link, index) => (
-          <AnimatedElement
-            key={link.id}
-            animation={{ type: 'slide-up', delay: 300 + index * 100 }}
-          >
-            <Link
-              to={link.path}
-              className="block bg-white dark:bg-dark-surface hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg shadow p-6 transition-colors duration-300"
-            >
-              <div className="flex">
-                <div className="flex-shrink-0 text-blue-600 dark:text-dark-primary">
-                  {link.icon}
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    {link.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                    {link.description}
-                  </p>
-                </div>
-              </div>
-            </Link>
+      {quickLinks.length > 0 && (
+        <>
+          <AnimatedElement animation={{ type: 'fade-in', delay: 200 }}>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Quick Access
+            </h2>
           </AnimatedElement>
-        ))}
-      </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {quickLinks.map((link, index) => (
+              <AnimatedElement
+                key={link.id}
+                animation={{ type: 'slide-up', delay: 300 + index * 100 }}
+              >
+                <Link
+                  to={link.path}
+                  className="block bg-white dark:bg-dark-surface hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg shadow p-6 transition-colors duration-300"
+                >
+                  <div className="flex">
+                    <div className="flex-shrink-0 text-blue-600 dark:text-dark-primary">
+                      {link.icon}
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        {link.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                        {link.description}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              </AnimatedElement>
+            ))}
+          </div>
+        </>
+      )}
       
       {/* Recent activity section (placeholder) */}
       <AnimatedElement animation={{ type: 'fade-in', delay: 400 }}>

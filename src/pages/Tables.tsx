@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AnimatedElement from '../components/AnimatedElement';
+import { useSearch } from '../contexts/SearchContext';
 
 /**
  * User data type
@@ -11,6 +12,7 @@ interface User {
   role: string;
   status: 'active' | 'inactive' | 'pending';
   lastActive: string;
+  isEditing?: boolean;
 }
 
 /**
@@ -19,7 +21,7 @@ interface User {
  */
 const Tables: React.FC = () => {
   // Sample data for basic table
-  const basicUsers: User[] = [
+  const initialBasicUsers: User[] = [
     { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin', status: 'active', lastActive: '2025-04-23' },
     { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'User', status: 'active', lastActive: '2025-04-22' },
     { id: 3, name: 'Robert Johnson', email: 'robert@example.com', role: 'Editor', status: 'pending', lastActive: '2025-04-20' },
@@ -27,9 +29,12 @@ const Tables: React.FC = () => {
     { id: 5, name: 'Michael Wilson', email: 'michael@example.com', role: 'User', status: 'active', lastActive: '2025-04-21' },
   ];
   
+  // State for basic table
+  const [basicUsers, setBasicUsers] = useState<User[]>(initialBasicUsers);
+  
   // Advanced table state with sorting and pagination
-  const [advancedUsers] = useState<User[]>([
-    ...basicUsers,
+  const initialAdvancedUsers: User[] = [
+    ...initialBasicUsers,
     { id: 6, name: 'Sarah Lee', email: 'sarah@example.com', role: 'Moderator', status: 'active', lastActive: '2025-04-23' },
     { id: 7, name: 'David Miller', email: 'david@example.com', role: 'User', status: 'pending', lastActive: '2025-04-19' },
     { id: 8, name: 'Jessica Taylor', email: 'jessica@example.com', role: 'User', status: 'active', lastActive: '2025-04-22' },
@@ -37,7 +42,10 @@ const Tables: React.FC = () => {
     { id: 10, name: 'Jennifer Clark', email: 'jennifer@example.com', role: 'User', status: 'active', lastActive: '2025-04-21' },
     { id: 11, name: 'Daniel Evans', email: 'daniel@example.com', role: 'Admin', status: 'active', lastActive: '2025-04-23' },
     { id: 12, name: 'Laura Baker', email: 'laura@example.com', role: 'User', status: 'pending', lastActive: '2025-04-18' },
-  ]);
+  ];
+  
+  const [advancedUsers, setAdvancedUsers] = useState<User[]>(initialAdvancedUsers);
+  const [originalAdvancedUsers, setOriginalAdvancedUsers] = useState<User[]>(initialAdvancedUsers);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,6 +58,44 @@ const Tables: React.FC = () => {
   // Filter state
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Edit state for advanced table
+  const [editFormData, setEditFormData] = useState<User>({
+    id: 0,
+    name: '',
+    email: '',
+    role: '',
+    status: 'active',
+    lastActive: ''
+  });
+  
+  // Global search from context
+  const { globalSearchQuery } = useSearch();
+  
+  // Apply global search to tables
+  useEffect(() => {
+    if (globalSearchQuery) {
+      const query = globalSearchQuery.toLowerCase();
+      
+      // Apply to basic users
+      setBasicUsers(initialBasicUsers.filter(user => 
+        user.name.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        user.role.toLowerCase().includes(query)
+      ));
+      
+      // Apply to advanced users (maintain other filters)
+      setAdvancedUsers(originalAdvancedUsers.filter(user => 
+        user.name.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        user.role.toLowerCase().includes(query)
+      ));
+    } else {
+      // Reset to original data if global search is cleared
+      setBasicUsers(initialBasicUsers);
+      setAdvancedUsers(originalAdvancedUsers);
+    }
+  }, [globalSearchQuery]);
   
   /**
    * Get status badge based on user status
@@ -130,7 +176,7 @@ const Tables: React.FC = () => {
         return false;
       }
       
-      // Filter by search query
+      // Filter by search query (local table search)
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         return (
@@ -153,6 +199,11 @@ const Tables: React.FC = () => {
     return [...filteredUsers].sort((a, b) => {
       const aValue = a[sortField];
       const bValue = b[sortField];
+      
+      // Handle undefined values
+      if (aValue === undefined && bValue === undefined) return 0;
+      if (aValue === undefined) return 1;
+      if (bValue === undefined) return -1;
       
       if (aValue < bValue) {
         return sortDirection === 'asc' ? -1 : 1;
@@ -187,17 +238,112 @@ const Tables: React.FC = () => {
       setCurrentPage(page);
     }
   };
+  
+  /**
+   * Handle edit click for a user
+   * @param {User} user - User to edit
+   */
+  const handleEditClick = (user: User) => {
+    // Set all other users' isEditing to false
+    setAdvancedUsers(advancedUsers.map(u => {
+      if (u.id === user.id) {
+        return { ...u, isEditing: true };
+      }
+      return { ...u, isEditing: false };
+    }));
+    
+    // Set the edit form data
+    setEditFormData({ ...user });
+  };
+  
+  /**
+   * Handle cancel edit
+   */
+  const handleCancelEdit = () => {
+    // Reset all isEditing flags
+    setAdvancedUsers(advancedUsers.map(u => ({ ...u, isEditing: false })));
+  };
+  
+  /**
+   * Handle edit form input change
+   * @param {React.ChangeEvent<HTMLInputElement | HTMLSelectElement>} e - Input change event
+   */
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  /**
+   * Handle save edit changes
+   */
+  const handleSaveEdit = () => {
+    // Update the user data
+    const updatedUsers = advancedUsers.map(user => {
+      if (user.id === editFormData.id) {
+        return { ...editFormData, isEditing: false };
+      }
+      return user;
+    });
+    
+    setAdvancedUsers(updatedUsers);
+    // Also update original users to maintain consistent state
+    setOriginalAdvancedUsers(updatedUsers);
+  };
+  
+  /**
+   * Handle user deletion
+   * @param {number} userId - ID of user to delete
+   */
+  const handleDeleteUser = (userId: number) => {
+    // Confirm deletion
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      const updatedUsers = advancedUsers.filter(user => user.id !== userId);
+      setAdvancedUsers(updatedUsers);
+      // Also update original users to maintain consistent state
+      setOriginalAdvancedUsers(updatedUsers);
+      
+      // If deleted user was on the last page and now there are no items on that page,
+      // go to the previous page
+      const updatedTotalPages = Math.ceil(updatedUsers.length / itemsPerPage);
+      if (currentPage > updatedTotalPages && updatedTotalPages > 0) {
+        setCurrentPage(updatedTotalPages);
+      }
+    }
+  };
+  
+  /**
+   * Reset all table data to initial state
+   */
+  const handleResetData = () => {
+    setBasicUsers(initialBasicUsers);
+    setAdvancedUsers(initialAdvancedUsers);
+    setOriginalAdvancedUsers(initialAdvancedUsers);
+    setCurrentPage(1);
+    setSearchQuery('');
+    setStatusFilter('all');
+  };
 
   return (
     <div>
       <AnimatedElement animation={{ type: 'fade-in' }}>
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            Table Components
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-1">
-            Various table layouts and features for displaying data.
-          </p>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              Table Components
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
+              Various table layouts and features for displaying data.
+            </p>
+          </div>
+          <button
+            onClick={handleResetData}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300"
+          >
+            Reset Data
+          </button>
         </div>
       </AnimatedElement>
       
@@ -247,6 +393,13 @@ const Tables: React.FC = () => {
                     </td>
                   </tr>
                 ))}
+                {basicUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No data found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -261,7 +414,7 @@ const Tables: React.FC = () => {
               Advanced Table
             </h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              Table with sorting, filtering, and pagination.
+              Table with sorting, filtering, pagination, and CRUD operations.
             </p>
           </div>
           
@@ -401,32 +554,116 @@ const Tables: React.FC = () => {
               <tbody className="bg-white dark:bg-dark-surface divide-y divide-gray-200 dark:divide-gray-700">
                 {getPaginatedData().map((user: User) => (
                   <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {user.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user.role}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(user.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {user.lastActive}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-blue-600 dark:text-dark-primary hover:text-blue-800 dark:hover:text-blue-400 mr-3">
-                        Edit
-                      </button>
-                      <button className="text-red-600 hover:text-red-800 dark:hover:text-red-400">
-                        Delete
-                      </button>
-                    </td>
+                    {user.isEditing ? (
+                      // Edit mode row
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {user.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="text"
+                            name="name"
+                            value={editFormData.name}
+                            onChange={handleEditFormChange}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-white"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="email"
+                            name="email"
+                            value={editFormData.email}
+                            onChange={handleEditFormChange}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-white"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <select
+                            name="role"
+                            value={editFormData.role}
+                            onChange={handleEditFormChange}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-white"
+                          >
+                            <option value="Admin">Admin</option>
+                            <option value="Editor">Editor</option>
+                            <option value="Moderator">Moderator</option>
+                            <option value="User">User</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <select
+                            name="status"
+                            value={editFormData.status}
+                            onChange={handleEditFormChange}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-white"
+                          >
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="pending">Pending</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="date"
+                            name="lastActive"
+                            value={editFormData.lastActive}
+                            onChange={handleEditFormChange}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-700 rounded-md dark:bg-gray-800 dark:text-white"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button 
+                            onClick={handleSaveEdit}
+                            className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 mr-3"
+                          >
+                            Save
+                          </button>
+                          <button 
+                            onClick={handleCancelEdit}
+                            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </>
+                    ) : (
+                      // View mode row
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {user.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                          {user.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {user.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {user.role}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getStatusBadge(user.status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {user.lastActive}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button 
+                            onClick={() => handleEditClick(user)}
+                            className="text-blue-600 dark:text-dark-primary hover:text-blue-800 dark:hover:text-blue-400 mr-3"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-red-600 hover:text-red-800 dark:hover:text-red-400"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
                 
@@ -522,6 +759,6 @@ const Tables: React.FC = () => {
       </AnimatedElement>
     </div>
   );
-};
+};  
 
 export default Tables;
