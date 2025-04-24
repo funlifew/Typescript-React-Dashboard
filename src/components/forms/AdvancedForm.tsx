@@ -29,7 +29,6 @@ const AdvancedForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
     gender: '',
     birthdate: '',
     country: '',
-    // اینجا interests را به عنوان یک آرایه خالی مقداردهی می‌کنیم
     interests: [] as string[],
     bio: '',
     terms: false,
@@ -56,30 +55,30 @@ const AdvancedForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
     if (type === 'checkbox') {
       const checkbox = e.target as HTMLInputElement;
       if (name === 'interests') {
-        // اینجا مدیریت چک‌باکس‌های علاقه‌مندی‌ها را جداگانه انجام می‌دهیم
+        // Handle interest checkboxes separately
         const interest = checkbox.value;
         if (checkbox.checked) {
-          // اضافه کردن یک علاقه‌مندی جدید به آرایه
+          // Add a new interest to the array
           setFormData(prev => ({
             ...prev,
             interests: [...prev.interests, interest]
           }));
         } else {
-          // حذف یک علاقه‌مندی از آرایه
+          // Remove an interest from the array
           setFormData(prev => ({
             ...prev,
             interests: prev.interests.filter(item => item !== interest)
           }));
         }
       } else {
-        // برای سایر چک‌باکس‌ها (مثل terms و notifications)
+        // For other checkboxes (like terms and notifications)
         setFormData(prev => ({
           ...prev,
           [name]: checkbox.checked
         }));
       }
     } else {
-      // برای input‌های متنی، select‌ها و غیره
+      // For text inputs, selects, etc.
       setFormData(prev => ({
         ...prev,
         [name]: value
@@ -93,6 +92,8 @@ const AdvancedForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
         [name]: null
       }));
     }
+  };
+
   /**
    * Validate the form
    * @returns {boolean} Whether the form is valid
@@ -105,8 +106,61 @@ const AdvancedForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
       confirmPassword: null,
       phone: null,
       terms: null,
+    };
+    
+    let isValid = true;
+    
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+      isValid = false;
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+      isValid = false;
     }
-    /**
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email.trim())) {
+      newErrors.email = 'Please enter a valid email address';
+      isValid = false;
+    }
+    
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+      isValid = false;
+    }
+    
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+      isValid = false;
+    }
+    
+    // Phone validation (optional)
+    if (formData.phone && !/^[0-9\s+\-()]*$/.test(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
+      isValid = false;
+    }
+    
+    // Terms validation
+    if (!formData.terms) {
+      newErrors.terms = 'You must accept the terms and conditions';
+      isValid = false;
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  /**
    * Handle form submission
    * @param {React.FormEvent<HTMLFormElement>} e - Form submission event
    */
@@ -385,57 +439,4 @@ const AdvancedForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
   );
 };
 
-export default AdvancedForm;
-    
-    let isValid = true;
-    
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-      isValid = false;
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
-      isValid = false;
-    }
-    
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-      isValid = false;
-    } else if (!emailRegex.test(formData.email.trim())) {
-      newErrors.email = 'Please enter a valid email address';
-      isValid = false;
-    }
-    
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-      isValid = false;
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-      isValid = false;
-    }
-    
-    // Confirm password validation
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-      isValid = false;
-    }
-    
-    // Phone validation (optional)
-    if (formData.phone && !/^[0-9\s+\-()]*$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
-      isValid = false;
-    }
-    
-    // Terms validation
-    if (!formData.terms) {
-      newErrors.terms = 'You must accept the terms and conditions';
-      isValid = false;
-    }
-    
-    setErrors(newErrors);
-    return isValid;
-  };
 export default AdvancedForm;

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSearch } from '../../contexts/SearchContext';
 
 /**
  * Dashboard layout component with sidebar and header
@@ -11,8 +12,8 @@ import { useAuth } from '../../contexts/AuthContext';
 const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, user } = useAuth();
+  const { setGlobalSearchQuery } = useSearch();
   
   /**
    * Toggle sidebar visibility (for mobile)
@@ -33,9 +34,7 @@ const DashboardLayout: React.FC = () => {
    * @param {string} query - Search query
    */
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    // You can implement actual search functionality here
-    console.log('Searching for:', query);
+    setGlobalSearchQuery(query);
   };
 
   // Set default user if not authenticated

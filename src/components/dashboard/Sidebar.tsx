@@ -92,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, isCollapsed, t
           {!isCollapsed && (
             <div className="flex items-center">
               <span className="text-xl font-bold text-blue-600 dark:text-dark-primary">
-                DarkApp
+                Mehdi Radfar
               </span>
             </div>
           )}
@@ -126,17 +126,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, isCollapsed, t
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`h-5 w-5 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+              className="h-5 w-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d={isCollapsed ? "M13 5l7 7-7 7" : "M11 19l-7-7 7-7"}
-              />
+              {isCollapsed ? (
+                // Right-pointing arrow when collapsed
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              ) : (
+                // Left-pointing arrow when expanded
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              )}
             </svg>
           </button>
         </div>

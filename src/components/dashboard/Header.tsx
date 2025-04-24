@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSearch } from '../../contexts/SearchContext';
 
 /**
  * User data type
@@ -36,21 +37,34 @@ const Header: React.FC<HeaderProps> = ({
   toggleCollapse
 }) => {
   const { user, logout, isAuthenticated } = useAuth();
+  const { globalSearchQuery, setGlobalSearchQuery, isSearching, setIsSearching } = useSearch();
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(globalSearchQuery);
   const profileRef = useRef<HTMLDivElement>(null);
   
   // Use override user data if provided (for guest access)
   const displayUser = userOverride || user;
+  
+  // Update local search when global search changes
+  useEffect(() => {
+    setSearchQuery(globalSearchQuery);
+  }, [globalSearchQuery]);
   
   /**
    * Handle search input change
    * @param {React.ChangeEvent<HTMLInputElement>} e - Input change event
    */
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    onSearch(e.target.value);
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // Call local search handler
+    onSearch(value);
+    
+    // Update global search
+    setGlobalSearchQuery(value);
+    setIsSearching(value.trim() !== '');
   };
   
   /**
@@ -162,16 +176,50 @@ const Header: React.FC<HeaderProps> = ({
             </div>
             <input
               type="search"
-              placeholder="Search"
+              placeholder="Search dashboard..."
               value={searchQuery}
               onChange={handleSearchChange}
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md leading-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-blue-500 dark:focus:ring-dark-primary focus:border-blue-500 dark:focus:border-dark-primary sm:text-sm transition-colors duration-300"
             />
+            {isSearching && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setGlobalSearchQuery('');
+                  setIsSearching(false);
+                  onSearch('');
+                }}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
         
         {/* Right section with profile */}
         <div className="flex items-center ml-4" ref={profileRef}>
+          {/* Link to Landing Page */}
+          <Link 
+            to="/"
+            className="mr-4 text-sm px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300"
+          >
+            View Website
+          </Link>
+          
           <div className="relative">
             <button
               onClick={toggleProfile}

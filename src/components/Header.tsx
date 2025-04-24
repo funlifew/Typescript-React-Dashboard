@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import { NavLink } from '../types';
 import AnimatedElement from './AnimatedElement';
@@ -50,7 +51,18 @@ const Header: React.FC = () => {
                 </a>
               </AnimatedElement>
             ))}
+            
+            {/* Dashboard Link */}
             <AnimatedElement animation={{ type: 'fade-in', delay: 500 }}>
+              <Link
+                to="/dashboard"
+                className="nav-link font-medium border border-blue-500 dark:border-dark-primary text-blue-600 dark:text-dark-primary px-4 py-2 rounded-md hover:bg-blue-50 dark:hover:bg-dark-background/20"
+              >
+                Dashboard
+              </Link>
+            </AnimatedElement>
+            
+            <AnimatedElement animation={{ type: 'fade-in', delay: 600 }}>
               <ThemeToggle />
             </AnimatedElement>
           </nav>
@@ -104,6 +116,15 @@ const Header: React.FC = () => {
                   {link.title}
                 </a>
               ))}
+              
+              {/* Dashboard Link in mobile menu */}
+              <Link
+                to="/dashboard"
+                className="block py-2 px-4 text-blue-600 dark:text-dark-primary font-medium hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
             </nav>
           </div>
         )}
