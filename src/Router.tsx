@@ -5,9 +5,11 @@ import Dashboard from './pages/Dashboard';
 import Forms from './pages/Forms';
 import Tables from './pages/Tables';
 import Notifications from './pages/Notifications';
+import LandingPage from './pages/LandingPage';
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SearchProvider } from './contexts/SearchContext';
 
 /**
  * Main router component for the application
@@ -18,24 +20,26 @@ const Router: React.FC = () => {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            
-            {/* Dashboard routes (no longer protected) */}
-            <Route element={<DashboardLayout />}>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="dashboard/forms" element={<Forms />} />
-              <Route path="dashboard/tables" element={<Tables />} />
-              <Route path="dashboard/notifications" element={<Notifications />} />
-            </Route>
-            
-            {/* Redirect from root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Catch all - redirect to dashboard */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          <SearchProvider>
+            <Routes>
+              {/* Landing Page (Marketing Website) */}
+              <Route path="/" element={<LandingPage />} />
+              
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              
+              {/* Dashboard routes */}
+              <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="forms" element={<Forms />} />
+                <Route path="tables" element={<Tables />} />
+                <Route path="notifications" element={<Notifications />} />
+              </Route>
+              
+              {/* Catch all - redirect to landing page */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </SearchProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
